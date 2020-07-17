@@ -1,5 +1,5 @@
 # cURLLib
-PHP cURL Lib
+PHP cURL Lib 教學檔案
 
 安裝方式:
 1.尋找 php.ini 開啟並找到 php_curl.dll 把前面的 ; 去掉作為啟動
