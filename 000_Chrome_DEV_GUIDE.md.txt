@@ -1,0 +1,80 @@
+Chrome Web Developer Tools
+
+04
+環境:
+VS studio安裝 auto complete tag
+
+安裝 https://nodejs.org/en/download
+
+npm install http-server -g
+
+05
+按右上角的三個點 => dock side
+決定開發者工具要靠哪裡對齊
+
+06
+按右上角的三個點 => settings 可開啟設定
+
+07
+inspect element
+
+08
+css styles
+
+styles上方有 hov鍵可按 檢查a:hover狀態
+打勾或取消打勾來檢查style變化
+
+styles 右方有 computed 鍵
+意思是顯示所有計算過後的 CSS 狀態
+
+09 永久編輯網頁 (不重要)
+去 Sources Panel
+可以選擇資料夾
+右鍵存起來編輯
+
+10. View Console messages
+Console面板
+有filter搜尋區及info選項 只秀出warning Error
+
+11. Log information to the Console
+console.log('current value is ' + calcTotal)
+//字串+calcTotal的值
+console.log('current value is %f', calcTotal)
+//輸出浮點數 calcTotal 的值
+
+12. Use the Console command line
+
+
+
+13. Open files in the developer tools
+
+
+
+14. Work with breakpoints and the call stack
+
+
+
+15. View HTTP request and response headers
+
+
+
+16. Identify items that slow page loading
+
+
+
+
+17. Emulate mobile connections
+
+
+
+
+18. Next steps
+
+
+
+
+
+
+
+
+
