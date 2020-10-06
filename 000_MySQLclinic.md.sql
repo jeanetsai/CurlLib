@@ -263,6 +263,7 @@ FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 LINES
 The first row is header row 故 IGNORE 1 LINES*/
 
 13.Insights on database creation in MySQL
+=================CH3 JOIN==================
 14.Join datasets
 Extraction:getting data from a source
 Transformation:converting data into another format
@@ -296,26 +297,449 @@ vtype VARCHAR(100) );
 
 17.Load accident data
 
+/* You will need to replace the file path below with the path to the data source you downloaded for this chapter.*/
+/*載入data*/
+LOAD DATA LOCAL INFILE 'c:\\Users\\bradwheeler\\Desktop\\Accidents_2015.csv' INTO TABLE accidents_2015 FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' IGNORE 1 LINES
+/*忽略標題*/
+(@col1, @dummy, @dummy, @dummy, @dummy, @dummy, @col2, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy) 
+/*只抓兩個欄位 塞入col1和col2*/
+SET accident_index=@col1, accident_severity=@col2;
+/*欄位1名稱為accident_index 欄位2名稱為accident_severity*/
+
+/* You will need to replace the file path below with the path to the data source you downloaded for this chapter.*/
+
+LOAD DATA LOCAL INFILE 'c:\\Users\\bradwheeler\\Desktop\\Vehicles_2015.csv' INTO TABLE vehicles_2015 FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' IGNORE 1 LINES
+(@col1, @dummy, @dummy, @col2, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy, @dummy) 
+SET accident_index=@col1, vehicle_type=@col2;
+
+LOAD DATA LOCAL INFILE 'c:\\Users\\bradwheeler\\Desktop\\vehicle_type.csv' INTO TABLE vehicle_type FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' IGNORE 1 LINES
+
+18.Join two datasets in MySQL
+
+SELECT 
+	v.vtype AS 'Vehicle Type'
+    AVG(a.Accident_Severity) AS 'Average Severity',
+    COUNT(a.accident_severity) AS 'Number of Accidents',
+/*顯示欄位 平均和計數*/
+FROM
+    accidents_2015 AS a
+        JOIN
+    vehicles_2015 AS m ON a.Accident_Index = m.Accident_Index
+        JOIN
+    vehicle_type AS v ON m.Vehicle_Type = v.vcode
+/*JOIN三個資料表*/
+WHERE
+    v.vehicle_type LIKE '%otorcycle%'
+/*模糊找出機車資料*/
+GROUP BY v.vehicle_type
+/*以運輸工具類型來分群*/
+
+19.Index in MySQL
+同上
+
+20.Find the median using Python, part 1
+21.Find the median using Python, part 2
+<PYTHON 要記得安裝 pymysql>
+~> python pip install pymysql
+
+import pymysql
+
+myConnection = pymysql.connect(host='localhost', user='root', passwd='password', db='accidents')
+cur = myConnection.cursor()
+/*cur物件用來執行mysql*/
+cur.execute('SELECT vtype FROM vehicle_type WHERE vtype LIKE "%otorcycle%";')
+cycleList = cur.fetchall()
+
+selectSQL = ('''
+	SELECT t.vtype, a.accident_severity
+	FROM accidents_2015 AS a
+	JOIN vehicles_2015 AS v ON a.accident_index = v.Accident_Index
+	JOIN vehicle_type AS t ON v.Vehicle_Type = t.vcode
+	WHERE t.vtype LIKE %s
+	ORDER BY a.accident_severity;''')
+	/*selectSQL=多行字串*/
+insertSQL = ('''
+	INSERT INTO accident_medians VALUES (%s, %s);''')
+	/*insertSQL=多行字串*/
+	/*製造一個表格來存median data*/	
+/*TRUNCATE 除掉所有的值但data structure還在*/
+
+for cycle in cycleList:
+	cur.execute(selectSQL,cycle[0])
+	/*cycle[0]=NAME OF THE CYCLE*/
+	accidents = cur.fetchall()
+	quotient, remainder = divmod(len(accidents),2)
+	/*divmod:function
+	2:divide by 2
+	quotient, remainder:variables
+	*/
+	if  remainder:
+		med_sev = accidents[quotient][1]
+		/*中位數*/
+	else:
+		med_sev = (accidents[quotient][1] + accidents[quotient+2][1])/2
+		/*中位數 若為偶數個則為中間兩個之平均*/
+	print('Finding median for',cycle[0])
+	cur.execute(insertSQL,(cycle[0],med_sev))
+
+myConnection.commit()
+/*commit changes*/
+myConnection.close()
+
+<PYTHON 執行>
+~> python calculate_median.py
+
+	
+22.Insights on joining datasets in MySQL	
+同上	
+=================CH4 SEARCH==================
+23.Searching a database
+Challenges:
+- Create a list of male and female populations
+by country for 2014
+- Return that information in 
+a specifically-formatted table
+
+24.Overview of search in MySQL
+本範例要做的事
+- Create an almost-correct query
+- Modify it to display half the data
+- Second query for the other half
+- Join to create a correct query
 
 
+25.Searching a database in MySQL
+
+SELECT County, Gender, sum(Population)
+/*欄位名稱*/
+FROM pop_proj
+/*資料表名稱pop_proj*/
+WHERE date_year = 2014
+GROUP BY County, Gender
+ORDER BY County;/*default:ASC*/
 
 
+/*將上述塞至以下SUB QUERY*/
+
+SELECT pop_proj.county, sum(pop_proj.Population) AS Male, femPop.Female
+FROM(
+	SELECT county, sum(population) AS Female
+	FROM pop_proj
+	WHERE date_year = 2014 AND gender = 'Female'
+    GROUP BY county
+) AS femPop
+/*SUB QUERY*/
+JOIN pop_proj ON femPop.county = pop_proj.county
+WHERE (pop_proj.date_year = 2014) AND (pop_proj.gender = 'Male')
+GROUP BY pop_proj.County
+ORDER BY pop_proj.County;
 
 
+26.Insights on searching data in MySQL
+同上
 
 
+=================CH5 CRUD==================
+27.CRUD operations
+<CREATE, READ, UPDATE, DELETE>
+
+<CREATE: INSERT>
+INSERT INTO 資料表名稱 (欄位名稱1, 欄位名稱2)
+VALUES (值1, 值2);
+
+<READ: SELECT>
+SELECT 欄位名稱1, 欄位名稱2
+FROM 資料表名稱;
+
+<UPDATE: UPDATE>
+UPDATE 資料表名稱
+SET 欄位名稱1 = 值1, 欄位名稱2 = 值2
+WHERE 某些欄位 = 某些值;
+
+<DELETE: DELETE>
+DELETE FROM 資料表名稱
+WHERE 某些欄位 = 某些值;
+
+<TRUNCATE>
+移除值，資料結構保留
+
+本章challenge:
+Create a record for each line in the play
+- the character who is speaking
+- the line number
+- the phrase itself, trimmed of spaces
+
+Transform each record
+- update the phrases so character names are uppercase
+- delete lines starting with enter, 
+exit (and exeunt), act, and scene
+- store performance data for each operation
 
 
+28.Overview of CRUD operations in MySQL
+A_Midsummer_Nights_Dream.txt
+
+29.Create database structure for CRUD
+
+CREATE TABLE amnd (line_number INT NOT NULL AUTO_INCREMENT, 
+char_name VARCHAR(45) NOT NULL, 
+play_text TEXT NOT NULL, 
+PRIMARY KEY (line_number));
+/*line_number是獨一無二的，可用成PRIMARY KEY*/
+/*資料表1 amnd*/
 
 
+CREATE TABLE performance (
+query_type TEXT NOT NULL, 
+query_time FLOAT NOT NULL);
+/*資料表2 performance*/
+
+30.Insert data in MySQL
+
+#!/usr/bin/python
+
+import pymysql
+import time
+
+myConnection = pymysql.connect(host='localhost', user='root', passwd='password', db='shakespeare')
+cur = myConnection.cursor()
+/*cur=cursor object*/
+
+with open('characters.txt') as char:
+	charList = char.read().splitlines()
+	/*collect only char name, no white spaces*/
+	
+curChar = 'Unknown'
+/*initialize with string unknown*/
+
+start_time = time.time()
+/*time method of the time module:time()*/
+
+createSQL = 'INSERT INTO amnd (char_name, play_text) VALUES (%s, %s);'
+
+/*loop through the text of the play*/
+with open('A_Midsummer_Nights_Dream.txt','r') as playlines:
+	for line in playlines:
+		if line.upper().strip() in charList:
+		/*.upper() 轉大寫 strip() removes 空格*/
+			curChar = line.strip()
+			print('Changing character to',line.strip())
+		else:
+		/*若不是character*/
+			print('Writing line \"' + line.strip() + '\"')
+			/*strip() removes 空格*/
+			cur.execute(createSQL,sql_values)
+			
+myConnection.commit()
+
+end_time = time.time()
+
+cur.execute('SELECT COUNT(line_number) FROM amnd;')
+numPlayLines = cur.fetchall()[0][0]
+print(numPlayLines,'rows')
+
+queryExecTime = end_time - start_time
+print('Total query time:',queryExecTime)
+queryTimePerLine = queryExecTime / numPlayLines
+print('Query time per line:',queryTimePerLine)
+
+insertPerfSQL = 'INSERT INTO performance (query_type, query_time) VALUES ("CREATE", %s);'
+cur.execute(insertPerfSQL, queryTimePerLine)
+
+myConnection.commit()
+myConnection.close()
 
 
+31.Update data in MySQL
+
+#!/usr/bin/python
+
+import pymysql
+import time
+
+myConnection = pymysql.connect(host='localhost', user='root', passwd='password', db='shakespeare')
+cur = myConnection.cursor()
+
+start_time = time.time()	
+
+updateSQL = 'UPDATE amnd SET play_text = REPLACE(play_text, %s, %s);'
+/*轉大寫*/	
+	
+with open('characters.txt','r') as char:
+	for character in char.read().splitlines():
+		print('Capitalizing occurances of ' + character + '...')
+		updateStrings = character.capitalize(), character.upper()
+		cur.execute(updateSQL, updateStrings)
+
+myConnection.commit()
+
+end_time = time.time()
+cur.execute('SELECT COUNT(line_number) FROM amnd;')
+numPlayLines = cur.fetchall()[0][0]
+print(numPlayLines,'rows')
+
+queryExecTime = end_time - start_time
+print('Total query time:',queryExecTime)
+queryTimePerLine = queryExecTime / numPlayLines
+print('Query time per line:',queryTimePerLine)
+
+insertPerfSQL = 'INSERT INTO performance (query_type, query_time) VALUES ("UPDATE", %s);'
+cur.execute(insertPerfSQL, queryTimePerLine)
+
+myConnection.commit()
+
+32.Delete data in MySQL
+------------------------/*重要*/
+DELETE FROM amnd_temp
+WHERE INSTR(play_text, 'theseus');
+/*刪除包含theseus字串之欄位*/
+------------------------/*重要*/
+SELECT * FROM amnd_temp
+WHERE INSTR(play_text, 'theseus');
+/*選取包含theseus字串之欄位*/
+------------------------/*重要*/
+#!/usr/bin/python
+
+import pymysql
+import time
+
+myConnection = pymysql.connect(host='localhost', user='root', passwd='password', db='shakespeare')
+cur = myConnection.cursor()
+
+start_time = time.time()	
+
+cur.execute('SELECT COUNT(line_number) FROM amnd;')
+numPlayLinesBeforeDelete = cur.fetchall()[0][0]
+
+print('Deleting lines...')
+cur.execute('DELETE FROM amnd WHERE play_text RLIKE "^enter|^exit|^act|^scene|^exeunt";')
+/*RLIKE:Regular expressions:^begin with enter*/
+myConnection.commit()
+/*commit changes*/
+
+end_time = time.time()
+cur.execute('SELECT COUNT(line_number) FROM amnd;')
+numPlayLinesAfterDelete = cur.fetchall()[0][0]
+
+numPlayLinesDeleted = numPlayLinesBeforeDelete - numPlayLinesAfterDelete
+print(numPlayLinesDeleted,'rows')
+
+queryExecTime = end_time - start_time
+print('Total query time:',queryExecTime)
+queryTimePerLine = queryExecTime / numPlayLinesDeleted
+print('Query time per line:',queryTimePerLine)
+
+insertPerfSQL = 'INSERT INTO performance (query_type, query_time) VALUES ("DELETE", %s);'
+cur.execute(insertPerfSQL, queryTimePerLine)
+
+myConnection.commit()
+
+33.Reading data in MySQL
+
+#!/usr/bin/python
+
+import pymysql
+import time
+
+myConnection = pymysql.connect(host='localhost', user='root', passwd='password', db='shakespeare')
+cur = myConnection.cursor()
+
+start_time = time.time()	
+
+cur.execute('SELECT play_text FROM amnd;')
+for line in cur.fetchall():
+    print(line[0])
+
+end_time = time.time()
+
+cur.execute('SELECT count(line_number) FROM amnd;')
+numPlayLines = cur.fetchall()[0][0]
+print(numPlayLines,'rows')
+
+queryExecTime = end_time - start_time
+print('Total query time:',queryExecTime)
+queryTimePerLine = queryExecTime / numPlayLines
+print('Query time per line:',queryTimePerLine)
+
+insertPerfSQL = 'INSERT INTO performance (query_type, query_time) VALUES ("READ", %s);'
+cur.execute(insertPerfSQL, queryTimePerLine)
+
+myConnection.commit()
+
+34.Insights on CRUD operations in MySQL
+- REPLACE() for updating values
+- INSTR() for finding text
+- Finding relative performance costs
+
+<CRUD> operations are irreversible
+使用需小心
+
+=================CH6 AVG, CALCULATIONS==================
+35.Calculations
+Challenge:
+- link the 2 provided datasets together
+- create a forecast of the demand
+for each level of education
+
+36.Overview of calculations in MySQL
+Solution:
+- calculate demand by age group
+- create a table with results
+- apply to full 2010-2060 data
+
+37.Import education data 重要
+
+CREATE TABLE caea (
+	date_year VARCHAR(50) NOT NULL,
+    age VARCHAR(50) NOT NULL,
+    gender VARCHAR(7) NOT NULL,
+    ed_attainment TEXT NOT NULL,
+    income TEXT NOT NULL,
+    population INT NOT NULL);
+
+/* You will need to replace the file path below with the path to the data source you downloaded for this chapter.*/
+
+LOAD DATA LOCAL INFILE 'c:\\Users\\bradwheeler\\Desktop\\CA_Educational_Attainment___Personal_Income_2008-2014_replaced.csv' INTO TABLE caea
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 LINES;
+/*忽略標題 IGNORE 1 LINES*/
+
+38.Finding demographics
+
+CREATE TABLE demographics AS
+SELECT caea.age AS Age,
+	ed_attainment AS Education,
+    SUM(population) / total_pop_by_age.total_pop
+	/*divide by*/
+	AS coefficient
+FROM caea
+JOIN (SELECT age, SUM(population) AS total_pop FROM caea GROUP BY age) AS total_pop_by_age
+	ON caea.age = total_pop_by_age.age
+GROUP BY Age, Education;
 
 
+39.Calculations in MySQL
 
+SELECT
+    temp_pop.date_year AS 'Year',
+    demographics.ed AS Education,
+	CAST(SUM(temp_pop.total_pop * coefficient) AS UNSIGNED) as Demand
+	/*multiply*/
+FROM
+    (SELECT date_year, age, sum(population) as total_pop FROM pop_proj GROUP BY date_year, age) as temp_pop
+        JOIN
+    demographics ON demographics.age = CASE
+	/*CASE=>if then statement*/
+			WHEN temp_pop.age < 18 THEN '00 to 17'
+			WHEN temp_pop.age > 65 THEN '65 to 80+'
+			ELSE '18 to 64'
+		END
+GROUP BY date_year, Education;
 
+40.Insights on calculations in MySQL
+同上
 
-
-
+41.Next steps
+MYSQL essc
+PHP with MySQL essc
 
 Source: DatabaseClinicMySQL
