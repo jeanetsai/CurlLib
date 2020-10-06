@@ -300,17 +300,68 @@ $.get({
 
 513593_03_01_XR30_detectajaxrequests
 
+Detect Ajax Requests
+- page assumes request was AJAX
+- page detects if request was AJAX
+- Handle regular requests and Ajax requests differently
+- Request Header: X-Requested-With
 
+//AJAX
+xhr.setRequestHeader('X-Requested-With','XMLHttpRequest');
+
+//PHP
+//if it is ajax, return true
+
+function is_ajax_request(){
+	return isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+	$_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest';	
+}
+if(is_ajax_request()){
+	echo "Ajax response";
+}else{
+	echo "Non-Ajax response";
+}
 
 513593_03_02_XR30_respondwithhtmlpartials
+Respond with HTML partials
 
+EX0302
 
 
 513593_03_03_XR30_respondwithjsondata
+Respond with JSON Data
 
+JSON Data
+Ready for use in JavaScript
+=>Not actually return JSON, but string representation
+-------------------------
+$assoc=array('a'=>1. 'b'=>2, 'c'=>3);
+json_encode($assoc);
+//'{"a":1,"b":2,"c":3}'
+-------------------------
+$array = array('a', 'b', 'c');
+json_encode($array);
+//'["a","b","c"]'
+-------------------------
+json_encode($array, JSON_FORCE_OBJECT);
+//'{"0":"a", "1":"b", "2":"c"}'
 
+-------------------------
+class User{
+	public $first_name = "Joe";
+	public $last_name = "Public";
+	private $secret_name ="Happy Joe";
+}
+$user = new User();
+json_encode($user);
+//'{"first_name":"Joe","last_name":"Public"}'
+-------------------------
+EX0303重要可複習
 
 513593_03_04_XR30_updatepageonchange
+Update Page on Change
+回傳選單(好範例)
+及時更新選單 EX0304 重要可複習
 
 
 
@@ -322,5 +373,4 @@ $.get({
 
 
 
-
-
+Source: Ajax with PHP
