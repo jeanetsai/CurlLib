@@ -1,5 +1,6 @@
 DB browser for SQLite
 sqlitebrowser.org
+SQLiteDatabaseBrowserPortable
 
 <交集INTERSECT/差集EXCEPT>
 SELECT column_name(s) FROM table_name1
