@@ -41,9 +41,8 @@ ORDER BY TBBT.field1 LIMIT 2 OFFSET 2;
 
 <TRANSACTION>
 加快執行速度 (包成一個unit)
-
-
 ========================
+
 3.2. SQL Overview
 08.About the overview
 <注意分號;>
@@ -157,6 +156,8 @@ UPDATE customer SET address = NULL, zip = NULL WHERE id = 5;
 
 16.Deleting data
 
+<DELETE FROM + WHERE>
+
 SELECT * FROM customer WHERE id = 4;
 DELETE FROM customer WHERE id = 4;
 SELECT * FROM customer;
@@ -165,64 +166,229 @@ SELECT * FROM customer;
 
 17.Creating a table
 
+CREATE TABLE test (
+  a INTEGER,
+  b TEXT
+);
+--創建TABLE test 有兩欄名叫a,b
+--類型分別為integer,text
 
+INSERT INTO test VALUES ( 1, 'a' );
+INSERT INTO test VALUES ( 2, 'b' );
+INSERT INTO test VALUES ( 3, 'c' );
+--每欄加入三個值
+SELECT * FROM test;
 
 
 18.Deleting a table
 
-
-
+CREATE TABLE test ( a TEXT, b TEXT );
+INSERT INTO test VALUES ( 'one', 'two' );
+SELECT * FROM test;
+DROP TABLE test;
+DROP TABLE IF EXISTS test;
+--如果table test存在則drop table
 
 19.Inserting rows
 
+<INSERT INTO>
 
+CREATE TABLE test ( a INTEGER, b TEXT, c TEXT );
+SELECT * FROM test;
 
+INSERT INTO test VALUES ( 1, 'This', 'Right here!' ); 
+INSERT INTO test ( b, c ) VALUES ( 'That', 'Over there!' ); 
+INSERT INTO test DEFAULT VALUES;
+--放入一個empty row, a b c 三欄皆為 NULL
+
+INSERT INTO test ( a, b, c ) SELECT id, name, description from item;
+--把一個現存的 item table 通通放進來
+--一次創建很多rows
 
 
 20.Deleting rows
 
+<DELETE FROM>
 
-
+SELECT * FROM test;
+DELETE FROM test WHERE a = 3;
+SELECT * FROM test WHERE a = 1;
+DELETE FROM test WHERE a = 1;
 
 
 21.The NULL value
 
+0, '', NAN 都不是 NULL
+他不是value 是 lack of value
 
+WHERE a = NULL 不成立!
+WHERE a IS NULL 才成立 (重要!)
+WHERE a IS NOT NULL 也成立
 
+INSERT INTO test ( a, b, c ) VALUES ( 0, NULL, '' );
+SELECT * FROM test WHERE b IS NULL;
+SELECT * FROM test WHERE b = '';--no results
+SELECT * FROM test WHERE c = '';--result exist
+SELECT * FROM test WHERE c IS NULL;
+
+<範例>
+DROP TABLE test;
+CREATE TABLE test (
+  a INTEGER NOT NULL,
+  b TEXT NOT NULL,
+  c TEXT
+);
+INSERT INTO test VALUES ( 1, 'this', 'that' );
+SELECT * FROM test;
+
+INSERT INTO test ( b, c ) VALUES ( 'one', 'two' );--錯誤 a NOT NULL
+INSERT INTO test ( a, c ) VALUES ( 1, 'two' );
+--錯誤 b NOT NULL
+INSERT INTO test ( a, b ) VALUES ( 1, 'two' );
+--可以 c 沒說 NOT NULL
+DROP TABLE test;
 
 22.Constraining columns
+<example>
+CREATE TABLE test ( a TEXT, b TEXT, c TEXT );
+INSERT INTO test ( a, b ) VALUES ( 'one', 'two' ); -- c IS NULL
+SELECT * FROM test;
 
-
-
+<example>
+CREATE TABLE test ( a TEXT, b TEXT, c TEXT NOT NULL );
+CREATE TABLE test ( a TEXT, b TEXT, c TEXT DEFAULT 'panda' );--給c DEFAULT value
+CREATE TABLE test ( a TEXT UNIQUE, b TEXT, c TEXT DEFAULT 'panda' );
+CREATE TABLE test ( a TEXT UNIQUE NOT NULL, b TEXT, c TEXT DEFAULT 'panda' );
+--重要 此時 a 不能放兩個一樣的值 因為都是UNIQUE
+--但是可以放兩個NULL 因為 NULL 不等於 NULL
 
 23.Changing a schema
+<ALTER TABLE + ADD>
 
+CREATE TABLE test ( a TEXT, b TEXT, c TEXT );
+INSERT INTO test VALUES ( 'one', 'two', 'three');
+INSERT INTO test VALUES ( 'two', 'three', 'four');
+INSERT INTO test VALUES ( 'three', 'four', 'five');
+SELECT * FROM test;
 
-
+ALTER TABLE test ADD d TEXT;
+ALTER TABLE test ADD e TEXT DEFAULT 'panda';
+-- 加入兩欄 d e,
+--- d每一row都是NULL
+--- e每一row都是panda
+DROP TABLE test;
 
 24.ID columns
 
+-- ID columns 通常是 UNIQUE, PRIMARY KEY
 
-
+CREATE TABLE test (
+  id INTEGER PRIMARY KEY,
+  a INTEGER,
+  b TEXT
+);
+INSERT INTO test (a, b) VALUES ( 10, 'a' );
+INSERT INTO test (a, b) VALUES ( 11, 'b' );
+INSERT INTO test (a, b) VALUES ( 12, 'c' );
+SELECT * FROM test;
+-----結果:primary key會自己auto increment
+--id a  b
+--1  10 a
+--2  11 b
+--3  12 c
 
 25.Filtering data
 
+<WHERE, LIKE, IN>
 
+SELECT * FROM Country;
+SELECT Name, Continent, Population FROM Country WHERE Population < 100000 ORDER BY Population DESC;
+
+SELECT Name, Continent, Population FROM Country WHERE Population < 100000 OR Population IS NULL 
+ORDER BY Population DESC;
+
+SELECT Name, Continent, Population FROM Country WHERE Population < 100000 AND Continent = 'Oceania' ORDER BY Population DESC;
+
+SELECT Name, Continent, Population FROM Country WHERE Name LIKE '%island%' ORDER BY Name;
+-- 前後任意 中間 island
+-- 塞入單一字母_a%
+SELECT Name, Continent, Population FROM Country WHERE Continent IN ( 'Europe', 'Asia' ) ORDER BY Name;
 
 
 26.Removing duplicates
 
+<SELECT DISTINCT>
 
+SELECT Continent FROM Country;
+SELECT DISTINCT Continent FROM Country;
+-- Using the SELECT DISTINCT statement, you will get only unique results. 
 
+-- test.db
+
+CREATE TABLE test ( a int, b int );
+INSERT INTO test VALUES ( 1, 1 );
+INSERT INTO test VALUES ( 2, 1 );
+INSERT INTO test VALUES ( 3, 1 );
+INSERT INTO test VALUES ( 4, 1 );
+INSERT INTO test VALUES ( 5, 1 );
+INSERT INTO test VALUES ( 1, 2 );
+INSERT INTO test VALUES ( 1, 2 );
+INSERT INTO test VALUES ( 1, 2 );
+INSERT INTO test VALUES ( 1, 2 );
+INSERT INTO test VALUES ( 1, 2 );
+SELECT * FROM test;
+
+SELECT DISTINCT a FROM test;
+SELECT DISTINCT b FROM test;
+SELECT DISTINCT a, b FROM test;
+-- output: 兩者組合是 unique 才會選
+DROP TABLE test;
 
 27.Ordering output
 
+<ORDER BY>
 
-
-
+SELECT Name FROM Country;
+SELECT Name FROM Country ORDER BY Name;
+-- 預設為 ASC
+SELECT Name FROM Country ORDER BY Name DESC;
+SELECT Name FROM Country ORDER BY Name ASC;
+SELECT Name, Continent FROM Country ORDER BY Continent, Name;
+--先用Continent排 在Continent裡用Name排
+SELECT Name, Continent, Region FROM Country ORDER BY Continent DESC, Region, Name;
+--先用Continent排DESC
+--在Continent裡用Region排ASC
+--在Region裡用Name排ASC
 
 28.Conditional expressions
 
+<SELECT CASE + WHEN THEN ELSE END>
+
+CREATE TABLE booltest (a INTEGER, b INTEGER);
+INSERT INTO booltest VALUES (1, 0);
+SELECT * FROM booltest;
+--a b
+--1 0
+
+SELECT
+    CASE WHEN a THEN 'true' ELSE 'false' END as boolA,
+    CASE WHEN b THEN 'true' ELSE 'false' END as boolB
+    FROM booltest
+;
+--boolA boolB
+--true  false
+--某些版本不太一樣
+
+
+SELECT
+  CASE a WHEN 1 THEN 'true' ELSE 'false' END AS boolA,
+  CASE b WHEN 1 THEN 'true' ELSE 'false' END AS boolB 
+  FROM booltest
+;
+--boolA boolB
+--true  false
+
+DROP TABLE booltest;
 
 
 
@@ -315,6 +481,209 @@ SELECT c.name AS Cust, c.zip, i.name AS Item, i.description, s.quantity AS Quan,
 
 -- restore database
 DELETE FROM customer WHERE id = 4;
+
+====================
+32.About SQL strings
+
+<SQL>
+SELECT 'string';
+
+<MySQL>
+SELECT "string";
+
+--在字串裡面如要放'號
+--要多放一個' 變成''
+SELECT 'David''s book';
+
+
+SELECT 'This' || '&';
+--根據不同系統用concat或+
+<MySQL>
+SELECT CONCAT('This','&');
+<MS SQL Server>
+SELECT 'This'+'&';
+
+<各種不同function>
+SUBSTR(string, start, length);
+LENGTH(string);
+TRIM(string);
+UPPER(string);
+LOWER(string);
+
+33.Finding the length of a string
+
+SELECT LENGTH('string');
+--output:6
+SELECT Name, LENGTH(Name) AS Len 
+FROM City 
+ORDER BY Len DESC;
+--依照名字的長度排序
+
+34.Selecting part of a string
+
+SELECT SUBSTR('this string', 6);
+--從第6個位置開始的sub string
+--output:string
+
+
+--1959-08-17
+SELECT released,
+    SUBSTR(released, 1, 4) AS year,
+	--1959 從第一個位置拿4個字
+    SUBSTR(released, 6, 2) AS month,
+	--08 從第六個位置拿2個字
+    SUBSTR(released, 9, 2) AS day
+	--17 從第九個位置拿2個字
+  FROM album
+  ORDER BY released
+;
+
+35.Removing spaces
+
+SELECT '   string   ';
+--'   string   '
+SELECT TRIM('   string   ');
+--'string'
+SELECT TRIM('   string   string   ');
+--'string   string'
+SELECT LTRIM('   string   ');
+--'string   '
+SELECT RTRIM('   string   ');
+--'   string'
+
+<刪除左右特定字元>
+SELECT '...string...';
+SELECT TRIM('...string...', '.');
+--'string'
+
+
+36.Folding case
+
+<UPPER/LOWER>
+
+SELECT 'StRiNg';
+--StRiNg
+
+SELECT 'StRiNg' = 'string';
+--0 (FALSE)
+SELECT LOWER('StRiNg') = LOWER('string');
+--1 (TRUE)
+SELECT UPPER('StRiNg') = UPPER('string');
+--1 (TRUE)
+
+SELECT UPPER(Name) FROM City ORDER BY Name;
+--全部轉大寫
+SELECT LOWER(Name) FROM City ORDER BY Name;
+--全部轉小寫
+
+37.Numeric types
+<Fundatmental numeric types>
+Integer
+Real Numbers
+
+<Integer types>
+INTEGER(precision)
+DECIMAL(precision, scale)
+MONEY(precision, scale)
+
+<Real types>
+REAL(precision)
+FLOAT(precision)
+
+<Precision vs Scale>
+((.1+.2)*10) =3.0
+(1.0+2.0)=3.0
+((.1+.2)*10)不等於(1.0+2.0)
+
+-- demonstrates comparing two REAL numbers
+SELECT A, B, A = B FROM 
+  ( SELECT 
+    ( ( .1 + .2 ) * 10 ) as A,
+    ( 1.0 + 2.0 ) as B
+  );
+--output
+A   B   A=B
+3.0 3.0 0
+--A不等於B
+
+
+38.What type is that value
+
+<TYPEOF>
+SELECT TYPEOF( 1 + 1 );
+-- integer
+SELECT TYPEOF( 1 + 1.0 );
+-- real
+SELECT TYPEOF('panda');
+-- text
+SELECT TYPEOF('panda' + 'koala');
+-- integer
+-- +是算數 系統不同可能不同
+
+39.Integer division
+
+SELECT 1 / 2;
+--0 意外吧
+SELECT 1.0 / 2;
+--0.5
+SELECT CAST(1 AS REAL) / 2;
+--CAST FUNCTION
+--0.5
+SELECT 17 / 5;
+--3
+SELECT 17 / 5, 17 % 5;
+--兩欄 3 和 2
+
+40.Rounding numbers
+
+<ROUND>四捨五入
+
+SELECT 2.55555;
+--2.55555
+SELECT ROUND(2.55555);
+--3.0
+SELECT ROUND(2.55555, 3);
+--2.556 四捨五入至小數第三位
+SELECT ROUND(2.55555, 0);
+--3.0 四捨五入至小數第0位
+
+41.Dates and times
+
+<SQL standard datetime format>
+2018-03-28 15:32:47
+
+<All dates and times in UTC>
+UTC
+Coordinated Universal Time
+
+<SQL date and time types>
+DATE
+TIME
+DATETIME
+YEAR
+INTERVAL
+--有些系統用varchar存時間
+
+42.Date- and time-related functions
+
+SELECT DATETIME('now');
+-- 2018-04-15 18:41:27
+SELECT DATE('now');
+-- 2018-04-15
+SELECT TIME('now');
+-- 18:41:27
+SELECT DATETIME('now', '+1 day');
+-- 注意 +1 day 是以 string 表示
+-- 2018-04-16 18:41:27
+SELECT DATETIME('now', '+3 days');
+-- 2018-04-18 18:41:27
+SELECT DATETIME('now', '-1 month');
+-- 2018-03-15 18:41:27
+SELECT DATETIME('now', '+1 year');
+-- 2019-04-15 18:41:27
+SELECT DATETIME('now', '+3 hours', '+27 minutes', '-1 day', '+3 years');
+-- 2021-04-14 22:08:27
+
 
 ====================
 43.What are aggregates
